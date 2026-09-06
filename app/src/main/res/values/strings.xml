@@ -1,0 +1,7 @@
+﻿<resources>
+    <string name="app_name">SpamBlock</string>
+    <string name="status_active">Protection Active</string>
+    <string name="status_inactive">Setup Required</string>
+    <string name="enable_protection">Enable Call Blocker</string>
+    <string name="grant_contacts_permission">Grant Contacts Permission</string>
+</resources>
