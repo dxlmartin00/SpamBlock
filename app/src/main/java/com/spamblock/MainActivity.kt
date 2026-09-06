@@ -1,4 +1,4 @@
-﻿package com.spamblock
+package com.spamblock
 
 import android.Manifest
 import android.app.role.RoleManager
@@ -95,12 +95,22 @@ class MainActivity : ComponentActivity() {
 
     private fun requestCallScreeningRole() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            val roleManager = getSystemService(Context.ROLE_SERVICE) as? RoleManager
-            if (roleManager != null && roleManager.isRoleAvailable(RoleManager.ROLE_CALL_SCREENING)) {
-                val intent = roleManager.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING)
-                roleRequestLauncher.launch(intent)
-            } else {
-                Toast.makeText(this, "Call screening role is not available on this device", Toast.LENGTH_SHORT).show()
+            try {
+                val roleManager = getSystemService(Context.ROLE_SERVICE) as? RoleManager
+                if (roleManager != null && roleManager.isRoleAvailable(RoleManager.ROLE_CALL_SCREENING)) {
+                    val intent = roleManager.createRequestRoleIntent(RoleManager.ROLE_CALL_SCREENING)
+                    roleRequestLauncher.launch(intent)
+                } else {
+                    val settingsIntent = android.content.Intent(android.provider.Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS)
+                    startActivity(settingsIntent)
+                }
+            } catch (e: Exception) {
+                try {
+                    val settingsIntent = android.content.Intent(android.provider.Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS)
+                    startActivity(settingsIntent)
+                } catch (ex: Exception) {
+                    Toast.makeText(this, "Please set SpamBlock as default Caller ID & Spam app in Settings -> Default Apps", Toast.LENGTH_LONG).show()
+                }
             }
         }
     }
