@@ -65,6 +65,20 @@ class CallBlockerScreeningService : CallScreeningService() {
         if (prefs.blockUnknownNumbers) {
             val isKnownContact = ContactChecker.isContact(this, rawNumber)
             if (!isKnownContact) {
+                // Check Repeated Caller Emergency Bypass
+                if (prefs.allowRepeatedCallers) {
+                    val windowMillis = prefs.repeatedCallWindowMinutes * 60 * 1000L
+                    val recentBlockedCount = db.getRecentBlockedCount(rawNumber, windowMillis)
+                    if (recentBlockedCount >= (prefs.repeatedCallThreshold - 1)) {
+                        Log.i(
+                            TAG,
+                            "Repeated caller detected ($recentBlockedCount recent attempts in ${prefs.repeatedCallWindowMinutes}m). Allowing call: $rawNumber"
+                        )
+                        allowCall(callDetails)
+                        return
+                    }
+                }
+
                 Log.i(TAG, "Blocking unknown caller (not in contacts): $rawNumber on SIM $simSlot")
                 blockCall(callDetails, "Not in Contacts", rawNumber, simSlot, prefs, db)
                 return

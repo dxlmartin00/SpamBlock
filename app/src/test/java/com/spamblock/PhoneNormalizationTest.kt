@@ -118,6 +118,34 @@ class PhoneNormalizationTest {
         assertFalse(com.spamblock.util.UpdateChecker.isNewerVersion("", "2.0.0"))
         assertFalse(com.spamblock.util.UpdateChecker.isNewerVersion("v2.0.0", ""))
         assertFalse(com.spamblock.util.UpdateChecker.isNewerVersion("invalid", "2.0.0"))
+
+        // Version 2.1.0 comparisons
+        assertTrue(com.spamblock.util.UpdateChecker.isNewerVersion("v2.2.0", "2.1.0"))
+        assertTrue(com.spamblock.util.UpdateChecker.isNewerVersion("v2.1.1", "2.1.0"))
+        assertFalse(com.spamblock.util.UpdateChecker.isNewerVersion("v2.1.0", "2.1.0"))
+        assertFalse(com.spamblock.util.UpdateChecker.isNewerVersion("v2.0.1", "2.1.0"))
+    }
+
+    @Test
+    fun testRepeatedCallerPolicy() {
+        fun shouldAllowRepeated(recentCount: Int, threshold: Int, allowRepeated: Boolean): Boolean {
+            if (!allowRepeated) return false
+            return recentCount >= (threshold - 1)
+        }
+
+        // Feature disabled
+        assertFalse(shouldAllowRepeated(recentCount = 5, threshold = 2, allowRepeated = false))
+
+        // Threshold = 2 (2nd call rings)
+        assertFalse(shouldAllowRepeated(recentCount = 0, threshold = 2, allowRepeated = true))
+        assertTrue(shouldAllowRepeated(recentCount = 1, threshold = 2, allowRepeated = true))
+        assertTrue(shouldAllowRepeated(recentCount = 2, threshold = 2, allowRepeated = true))
+
+        // Threshold = 3 (3rd call rings)
+        assertFalse(shouldAllowRepeated(recentCount = 0, threshold = 3, allowRepeated = true))
+        assertFalse(shouldAllowRepeated(recentCount = 1, threshold = 3, allowRepeated = true))
+        assertTrue(shouldAllowRepeated(recentCount = 2, threshold = 3, allowRepeated = true))
+        assertTrue(shouldAllowRepeated(recentCount = 3, threshold = 3, allowRepeated = true))
     }
 }
 

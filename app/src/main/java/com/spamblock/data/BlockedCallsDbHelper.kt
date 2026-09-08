@@ -12,7 +12,7 @@ class BlockedCallsDbHelper(context: Context) : SQLiteOpenHelper(context, DATABAS
 
     companion object {
         const val DATABASE_NAME = "spamblock.db"
-        const val DATABASE_VERSION = 2
+        const val DATABASE_VERSION = 3
 
         const val TABLE_BLOCKED = "blocked_calls"
         const val COLUMN_ID = "_id"
@@ -49,16 +49,48 @@ class BlockedCallsDbHelper(context: Context) : SQLiteOpenHelper(context, DATABAS
             )
         """.trimIndent()
         db.execSQL(createTable)
-        db.execSQL("CREATE INDEX idx_timestamp ON $TABLE_BLOCKED ($COLUMN_TIMESTAMP DESC)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_timestamp ON $TABLE_BLOCKED ($COLUMN_TIMESTAMP DESC)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_phone_time ON $TABLE_BLOCKED ($COLUMN_PHONE, $COLUMN_TIMESTAMP DESC)")
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
         if (oldVersion < 2) {
             try {
                 db.execSQL("ALTER TABLE $TABLE_BLOCKED ADD COLUMN $COLUMN_SIM_SLOT INTEGER DEFAULT -1")
-            } catch (e: Exception) {
-                // If column already exists or table needs recreation
+            } catch (_: Exception) {
+                // Ignore if column already exists
             }
+        }
+        if (oldVersion < 3) {
+            try {
+                db.execSQL("CREATE INDEX IF NOT EXISTS idx_phone_time ON $TABLE_BLOCKED ($COLUMN_PHONE, $COLUMN_TIMESTAMP DESC)")
+            } catch (_: Exception) {
+                // Ignore if index already exists
+            }
+        }
+    }
+
+    /**
+     * Returns count of recently blocked calls from the given number within the windowMillis.
+     */
+    fun getRecentBlockedCount(rawNumber: String, windowMillis: Long): Int {
+        if (rawNumber.isBlank()) return 0
+        val minTime = System.currentTimeMillis() - windowMillis
+        val normalized = rawNumber.replace(Regex("[^0-9+]"), "")
+        val suffix = if (normalized.length >= 7) normalized.takeLast(7) else normalized
+
+        val query = """
+            SELECT COUNT(*) FROM $TABLE_BLOCKED 
+            WHERE $COLUMN_TIMESTAMP >= ? 
+            AND ($COLUMN_PHONE = ? OR $COLUMN_PHONE LIKE ?)
+        """.trimIndent()
+
+        val cursor = readableDatabase.rawQuery(
+            query,
+            arrayOf(minTime.toString(), rawNumber, "%$suffix")
+        )
+        return cursor.use {
+            if (it.moveToFirst()) it.getInt(0) else 0
         }
     }
 

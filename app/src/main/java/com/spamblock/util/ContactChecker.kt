@@ -1,4 +1,4 @@
-﻿package com.spamblock.util
+package com.spamblock.util
 
 import android.content.Context
 import android.net.Uri
@@ -18,7 +18,7 @@ object ContactChecker {
             val projection = arrayOf(ContactsContract.PhoneLookup._ID)
             val cursor = context.contentResolver.query(uri, projection, null, null, null)
             cursor?.use {
-                it.count > 0
+                it.moveToFirst()
             } ?: false
         } catch (e: SecurityException) {
             Log.w(TAG, "Contacts permission not granted: ${e.message}")

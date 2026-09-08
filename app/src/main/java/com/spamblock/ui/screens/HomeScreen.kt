@@ -50,6 +50,9 @@ fun HomeScreen(
     var sim1Protected by remember { mutableStateOf(prefs.sim1Protected) }
     var sim2Protected by remember { mutableStateOf(prefs.sim2Protected) }
 
+    var allowRepeatedCallers by remember { mutableStateOf(prefs.allowRepeatedCallers) }
+    var repeatedCallThreshold by remember { mutableIntStateOf(prefs.repeatedCallThreshold) }
+
     val isFullyProtected = isRoleHeld && hasContactsPermission
 
     Column(
@@ -336,6 +339,72 @@ fun HomeScreen(
                             prefs.notifyOnBlocked = it
                         }
                     )
+
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp), color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = if (allowRepeatedCallers) 8.dp else 0.dp)
+                    ) {
+                        ModernRuleItem(
+                            icon = Icons.Outlined.Repeat,
+                            title = "Allow Repeated Callers",
+                            subtitle = if (allowRepeatedCallers)
+                                "Bypasses block if called $repeatedCallThreshold times within 5 mins"
+                            else
+                                "Always blocks repeated unknown callers",
+                            checked = allowRepeatedCallers,
+                            onCheckedChange = {
+                                allowRepeatedCallers = it
+                                prefs.allowRepeatedCallers = it
+                            }
+                        )
+
+                        if (allowRepeatedCallers) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(start = 52.dp, end = 16.dp, top = 2.dp, bottom = 6.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Rings on:",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+
+                                FilterChip(
+                                    selected = repeatedCallThreshold == 2,
+                                    onClick = {
+                                        repeatedCallThreshold = 2
+                                        prefs.repeatedCallThreshold = 2
+                                    },
+                                    label = { Text("2nd call", style = MaterialTheme.typography.labelSmall) },
+                                    shape = RoundedCornerShape(8.dp),
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                )
+
+                                FilterChip(
+                                    selected = repeatedCallThreshold == 3,
+                                    onClick = {
+                                        repeatedCallThreshold = 3
+                                        prefs.repeatedCallThreshold = 3
+                                    },
+                                    label = { Text("3rd call", style = MaterialTheme.typography.labelSmall) },
+                                    shape = RoundedCornerShape(8.dp),
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }

@@ -20,6 +20,9 @@ class PreferencesManager(context: Context) {
         private const val KEY_TOTAL_SCREENED = "total_screened_calls"
         private const val KEY_SIM1_PROTECTED = "sim1_protected"
         private const val KEY_SIM2_PROTECTED = "sim2_protected"
+        private const val KEY_ALLOW_REPEATED_CALLERS = "allow_repeated_callers"
+        private const val KEY_REPEATED_CALL_THRESHOLD = "repeated_call_threshold"
+        private const val KEY_REPEATED_CALL_WINDOW = "repeated_call_window_minutes"
 
         @Volatile
         private var instance: PreferencesManager? = null
@@ -61,6 +64,18 @@ class PreferencesManager(context: Context) {
     var sim2Protected: Boolean
         get() = prefs.getBoolean(KEY_SIM2_PROTECTED, true)
         set(value) = prefs.edit().putBoolean(KEY_SIM2_PROTECTED, value).apply()
+
+    var allowRepeatedCallers: Boolean
+        get() = prefs.getBoolean(KEY_ALLOW_REPEATED_CALLERS, true)
+        set(value) = prefs.edit().putBoolean(KEY_ALLOW_REPEATED_CALLERS, value).apply()
+
+    var repeatedCallThreshold: Int
+        get() = prefs.getInt(KEY_REPEATED_CALL_THRESHOLD, 2)
+        set(value) = prefs.edit().putInt(KEY_REPEATED_CALL_THRESHOLD, value).apply()
+
+    var repeatedCallWindowMinutes: Int
+        get() = prefs.getInt(KEY_REPEATED_CALL_WINDOW, 5)
+        set(value) = prefs.edit().putInt(KEY_REPEATED_CALL_WINDOW, value).apply()
 
     fun isSimSlotProtected(slot: Int): Boolean {
         return when (slot) {
