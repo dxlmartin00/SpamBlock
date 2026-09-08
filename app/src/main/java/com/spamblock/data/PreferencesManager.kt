@@ -1,4 +1,4 @@
-﻿package com.spamblock.data
+package com.spamblock.data
 
 import android.content.Context
 import android.content.SharedPreferences
@@ -18,6 +18,8 @@ class PreferencesManager(context: Context) {
         private const val KEY_NOTIFY_ON_BLOCKED = "notify_on_blocked"
         private const val KEY_WHITELIST = "whitelist_numbers"
         private const val KEY_TOTAL_SCREENED = "total_screened_calls"
+        private const val KEY_SIM1_PROTECTED = "sim1_protected"
+        private const val KEY_SIM2_PROTECTED = "sim2_protected"
 
         @Volatile
         private var instance: PreferencesManager? = null
@@ -51,6 +53,22 @@ class PreferencesManager(context: Context) {
     var notifyOnBlocked: Boolean
         get() = prefs.getBoolean(KEY_NOTIFY_ON_BLOCKED, true)
         set(value) = prefs.edit().putBoolean(KEY_NOTIFY_ON_BLOCKED, value).apply()
+
+    var sim1Protected: Boolean
+        get() = prefs.getBoolean(KEY_SIM1_PROTECTED, true)
+        set(value) = prefs.edit().putBoolean(KEY_SIM1_PROTECTED, value).apply()
+
+    var sim2Protected: Boolean
+        get() = prefs.getBoolean(KEY_SIM2_PROTECTED, true)
+        set(value) = prefs.edit().putBoolean(KEY_SIM2_PROTECTED, value).apply()
+
+    fun isSimSlotProtected(slot: Int): Boolean {
+        return when (slot) {
+            0 -> sim1Protected
+            1 -> sim2Protected
+            else -> true
+        }
+    }
 
     var totalScreened: Int
         get() = prefs.getInt(KEY_TOTAL_SCREENED, 0)

@@ -1,4 +1,4 @@
-﻿package com.spamblock.service
+package com.spamblock.service
 
 import android.telecom.Call
 import android.telecom.CallScreeningService
@@ -33,12 +33,25 @@ class CallBlockerScreeningService : CallScreeningService() {
                 rawNumber.equals("restricted", ignoreCase = true) ||
                 rawNumber.equals("anonymous", ignoreCase = true)
 
-        Log.d(TAG, "Incoming call screened: rawNumber='$rawNumber', isPrivate=$isPrivate")
+        val simSlot = com.spamblock.util.SimHelper.resolveSimSlot(applicationContext, callDetails)
+        Log.d(TAG, "Incoming call screened: rawNumber='$rawNumber', isPrivate=$isPrivate, simSlot=$simSlot")
+
+        // Per-SIM Card Slot Protection Rule Check
+        if (simSlot == 0 && !prefs.sim1Protected) {
+            Log.i(TAG, "SIM 1 protection is turned OFF. Allowing call: $rawNumber")
+            allowCall(callDetails)
+            return
+        }
+        if (simSlot == 1 && !prefs.sim2Protected) {
+            Log.i(TAG, "SIM 2 protection is turned OFF. Allowing call: $rawNumber")
+            allowCall(callDetails)
+            return
+        }
 
         if (isPrivate) {
             if (prefs.blockPrivateNumbers) {
-                Log.i(TAG, "Blocking private/hidden call")
-                blockCall(callDetails, "Private / Hidden Caller", "Private Number", prefs, db)
+                Log.i(TAG, "Blocking private/hidden call on SIM $simSlot")
+                blockCall(callDetails, "Private / Hidden Caller", "Private Number", simSlot, prefs, db)
                 return
             } else {
                 allowCall(callDetails)
@@ -57,8 +70,8 @@ class CallBlockerScreeningService : CallScreeningService() {
         if (prefs.blockUnknownNumbers) {
             val isKnownContact = ContactChecker.isContact(this, rawNumber)
             if (!isKnownContact) {
-                Log.i(TAG, "Blocking unknown caller (not in contacts): $rawNumber")
-                blockCall(callDetails, "Not in Contacts", rawNumber, prefs, db)
+                Log.i(TAG, "Blocking unknown caller (not in contacts): $rawNumber on SIM $simSlot")
+                blockCall(callDetails, "Not in Contacts", rawNumber, simSlot, prefs, db)
                 return
             }
         }
@@ -72,6 +85,7 @@ class CallBlockerScreeningService : CallScreeningService() {
         details: Call.Details,
         reason: String,
         displayNumber: String,
+        simSlot: Int,
         prefs: PreferencesManager,
         db: BlockedCallsDbHelper
     ) {
@@ -84,11 +98,16 @@ class CallBlockerScreeningService : CallScreeningService() {
 
         respondToCall(details, response)
 
-        // Asynchronously or quickly record to database
-        db.insert(displayNumber, reason)
+        // Asynchronously or quickly record to database with SIM slot
+        db.insert(displayNumber, reason, simSlot)
 
         if (prefs.notifyOnBlocked) {
-            NotificationHelper.notifyBlockedCall(this, displayNumber, reason)
+            val simLabel = when (simSlot) {
+                0 -> "[SIM 1] "
+                1 -> "[SIM 2] "
+                else -> ""
+            }
+            NotificationHelper.notifyBlockedCall(this, "$simLabel$displayNumber", reason)
         }
     }
 

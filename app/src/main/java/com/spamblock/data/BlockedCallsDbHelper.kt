@@ -1,4 +1,4 @@
-﻿package com.spamblock.data
+package com.spamblock.data
 
 import android.content.ContentValues
 import android.content.Context
@@ -12,13 +12,14 @@ class BlockedCallsDbHelper(context: Context) : SQLiteOpenHelper(context, DATABAS
 
     companion object {
         const val DATABASE_NAME = "spamblock.db"
-        const val DATABASE_VERSION = 1
+        const val DATABASE_VERSION = 2
 
         const val TABLE_BLOCKED = "blocked_calls"
         const val COLUMN_ID = "_id"
         const val COLUMN_PHONE = "phone_number"
         const val COLUMN_TIMESTAMP = "timestamp"
         const val COLUMN_REASON = "reason"
+        const val COLUMN_SIM_SLOT = "sim_slot"
 
         @Volatile
         private var instance: BlockedCallsDbHelper? = null
@@ -43,7 +44,8 @@ class BlockedCallsDbHelper(context: Context) : SQLiteOpenHelper(context, DATABAS
                 $COLUMN_ID INTEGER PRIMARY KEY AUTOINCREMENT,
                 $COLUMN_PHONE TEXT NOT NULL,
                 $COLUMN_TIMESTAMP INTEGER NOT NULL,
-                $COLUMN_REASON TEXT NOT NULL
+                $COLUMN_REASON TEXT NOT NULL,
+                $COLUMN_SIM_SLOT INTEGER DEFAULT -1
             )
         """.trimIndent()
         db.execSQL(createTable)
@@ -51,15 +53,21 @@ class BlockedCallsDbHelper(context: Context) : SQLiteOpenHelper(context, DATABAS
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        db.execSQL("DROP TABLE IF EXISTS $TABLE_BLOCKED")
-        onCreate(db)
+        if (oldVersion < 2) {
+            try {
+                db.execSQL("ALTER TABLE $TABLE_BLOCKED ADD COLUMN $COLUMN_SIM_SLOT INTEGER DEFAULT -1")
+            } catch (e: Exception) {
+                // If column already exists or table needs recreation
+            }
+        }
     }
 
-    fun insert(phoneNumber: String, reason: String): Long {
+    fun insert(phoneNumber: String, reason: String, simSlot: Int = -1): Long {
         val values = ContentValues().apply {
             put(COLUMN_PHONE, phoneNumber)
             put(COLUMN_TIMESTAMP, System.currentTimeMillis())
             put(COLUMN_REASON, reason)
+            put(COLUMN_SIM_SLOT, simSlot)
         }
         val id = writableDatabase.insert(TABLE_BLOCKED, null, values)
         refreshFlow()
@@ -68,13 +76,14 @@ class BlockedCallsDbHelper(context: Context) : SQLiteOpenHelper(context, DATABAS
 
     fun getAll(): List<BlockedCall> {
         val list = mutableListOf<BlockedCall>()
-        val query = "SELECT $COLUMN_ID, $COLUMN_PHONE, $COLUMN_TIMESTAMP, $COLUMN_REASON FROM $TABLE_BLOCKED ORDER BY $COLUMN_TIMESTAMP DESC LIMIT 200"
+        val query = "SELECT $COLUMN_ID, $COLUMN_PHONE, $COLUMN_TIMESTAMP, $COLUMN_REASON, $COLUMN_SIM_SLOT FROM $TABLE_BLOCKED ORDER BY $COLUMN_TIMESTAMP DESC LIMIT 200"
         val cursor = readableDatabase.rawQuery(query, null)
         cursor.use {
             val idIdx = cursor.getColumnIndexOrThrow(COLUMN_ID)
             val phoneIdx = cursor.getColumnIndexOrThrow(COLUMN_PHONE)
             val timeIdx = cursor.getColumnIndexOrThrow(COLUMN_TIMESTAMP)
             val reasonIdx = cursor.getColumnIndexOrThrow(COLUMN_REASON)
+            val simIdx = cursor.getColumnIndexOrThrow(COLUMN_SIM_SLOT)
 
             while (cursor.moveToNext()) {
                 list.add(
@@ -82,7 +91,8 @@ class BlockedCallsDbHelper(context: Context) : SQLiteOpenHelper(context, DATABAS
                         id = cursor.getLong(idIdx),
                         phoneNumber = cursor.getString(phoneIdx),
                         timestamp = cursor.getLong(timeIdx),
-                        reason = cursor.getString(reasonIdx)
+                        reason = cursor.getString(reasonIdx),
+                        simSlot = cursor.getInt(simIdx)
                     )
                 )
             }

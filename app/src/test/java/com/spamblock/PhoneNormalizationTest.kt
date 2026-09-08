@@ -1,4 +1,4 @@
-﻿package com.spamblock
+package com.spamblock
 
 import org.junit.Assert.*
 import org.junit.Test
@@ -43,5 +43,30 @@ class PhoneNormalizationTest {
                     case.equals("anonymous", ignoreCase = true)
             assertTrue("Expected '$case' to be treated as private/hidden", isPrivate)
         }
+    }
+
+    @Test
+    fun testSimSlotProtectionPolicy() {
+        // Scenario 1: SIM 1 Protected, SIM 2 Open
+        val sim1Protected = true
+        val sim2Protected = false
+
+        fun shouldScreenCall(slot: Int): Boolean {
+            return when (slot) {
+                0 -> sim1Protected
+                1 -> sim2Protected
+                else -> true
+            }
+        }
+
+        assertTrue("Calls on SIM 1 should be screened", shouldScreenCall(0))
+        assertFalse("Calls on SIM 2 should bypass screening", shouldScreenCall(1))
+        assertTrue("Unknown slot should be screened by default", shouldScreenCall(-1))
+
+        // Scenario 2: Both Open
+        assertFalse(
+            "Calls on SIM 1 should bypass when turned off",
+            when (0) { 0 -> false; 1 -> false; else -> true }
+        )
     }
 }

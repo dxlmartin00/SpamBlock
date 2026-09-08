@@ -1,4 +1,4 @@
-package com.spamblock
+﻿package com.spamblock
 
 import android.Manifest
 import android.app.role.RoleManager
@@ -14,12 +14,14 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.core.content.ContextCompat
 import com.spamblock.data.BlockedCallsDbHelper
 import com.spamblock.data.PreferencesManager
@@ -27,6 +29,8 @@ import com.spamblock.ui.screens.HistoryScreen
 import com.spamblock.ui.screens.HomeScreen
 import com.spamblock.ui.screens.WhitelistScreen
 import com.spamblock.ui.theme.SpamBlockTheme
+import com.spamblock.util.SimCardInfo
+import com.spamblock.util.SimHelper
 
 class MainActivity : ComponentActivity() {
 
@@ -35,6 +39,8 @@ class MainActivity : ComponentActivity() {
 
     private var isRoleHeldState = mutableStateOf(false)
     private var hasContactsPermissionState = mutableStateOf(false)
+    private var hasPhoneStatePermissionState = mutableStateOf(false)
+    private var activeSimsState = mutableStateOf<List<SimCardInfo>>(emptyList())
 
     private val roleRequestLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -48,6 +54,15 @@ class MainActivity : ComponentActivity() {
         hasContactsPermissionState.value = granted
         if (!granted) {
             Toast.makeText(this, "Contacts access is needed to detect unknown numbers", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private val phoneStatePermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        hasPhoneStatePermissionState.value = granted
+        if (granted) {
+            activeSimsState.value = SimHelper.getActiveSims(this)
         }
     }
 
@@ -91,6 +106,15 @@ class MainActivity : ComponentActivity() {
             this,
             Manifest.permission.READ_CONTACTS
         ) == PackageManager.PERMISSION_GRANTED
+
+        val hasPhoneState = ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.READ_PHONE_STATE
+        ) == PackageManager.PERMISSION_GRANTED
+        hasPhoneStatePermissionState.value = hasPhoneState
+        if (hasPhoneState) {
+            activeSimsState.value = SimHelper.getActiveSims(this)
+        }
     }
 
     private fun requestCallScreeningRole() {
@@ -119,6 +143,10 @@ class MainActivity : ComponentActivity() {
         contactsPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
     }
 
+    private fun requestPhoneStatePermission() {
+        phoneStatePermissionLauncher.launch(Manifest.permission.READ_PHONE_STATE)
+    }
+
     private fun requestNotificationPermissionIfNeeded() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
@@ -136,12 +164,15 @@ class MainActivity : ComponentActivity() {
         Scaffold(
             modifier = Modifier.fillMaxSize(),
             bottomBar = {
-                NavigationBar {
+                NavigationBar(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    tonalElevation = NavigationBarDefaults.Elevation
+                ) {
                     NavigationBarItem(
                         selected = selectedTab == 0,
                         onClick = { selectedTab = 0 },
-                        icon = { Icon(Icons.Default.Shield, contentDescription = "Protection") },
-                        label = { Text("Protection") }
+                        icon = { Icon(Icons.Outlined.Shield, contentDescription = "Protection") },
+                        label = { Text("Protection", style = MaterialTheme.typography.labelMedium) }
                     )
                     NavigationBarItem(
                         selected = selectedTab == 1,
@@ -150,20 +181,28 @@ class MainActivity : ComponentActivity() {
                             BadgedBox(
                                 badge = {
                                     if (calls.isNotEmpty()) {
-                                        Badge { Text("${calls.size}") }
+                                        Badge {
+                                            Text(
+                                                "${calls.size}",
+                                                style = MaterialTheme.typography.labelSmall.copy(
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontFamily = FontFamily.Monospace
+                                                )
+                                            )
+                                        }
                                     }
                                 }
                             ) {
-                                Icon(Icons.Default.History, contentDescription = "History")
+                                Icon(Icons.Outlined.History, contentDescription = "Activity")
                             }
                         },
-                        label = { Text("Blocked") }
+                        label = { Text("Activity", style = MaterialTheme.typography.labelMedium) }
                     )
                     NavigationBarItem(
                         selected = selectedTab == 2,
                         onClick = { selectedTab = 2 },
-                        icon = { Icon(Icons.Default.CheckCircle, contentDescription = "Allowed") },
-                        label = { Text("Allowed") }
+                        icon = { Icon(Icons.Outlined.CheckCircle, contentDescription = "Allowed") },
+                        label = { Text("Allowed", style = MaterialTheme.typography.labelMedium) }
                     )
                 }
             }
@@ -177,9 +216,12 @@ class MainActivity : ComponentActivity() {
                     0 -> HomeScreen(
                         isRoleHeld = isRoleHeldState.value,
                         hasContactsPermission = hasContactsPermissionState.value,
+                        hasPhoneStatePermission = hasPhoneStatePermissionState.value,
+                        activeSims = activeSimsState.value,
                         totalBlockedCount = calls.size,
                         onRequestRole = { requestCallScreeningRole() },
                         onRequestContactsPermission = { requestContactsPermission() },
+                        onRequestPhoneStatePermission = { requestPhoneStatePermission() },
                         prefs = prefs
                     )
                     1 -> HistoryScreen(
