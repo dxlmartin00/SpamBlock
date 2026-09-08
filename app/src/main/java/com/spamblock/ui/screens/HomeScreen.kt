@@ -82,7 +82,7 @@ fun HomeScreen(
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
                     ) {
                         Text(
-                            text = "v2.0",
+                            text = "v${com.spamblock.BuildConfig.VERSION_NAME}",
                             style = MaterialTheme.typography.labelSmall.copy(
                                 fontWeight = FontWeight.SemiBold,
                                 fontFamily = FontFamily.Monospace

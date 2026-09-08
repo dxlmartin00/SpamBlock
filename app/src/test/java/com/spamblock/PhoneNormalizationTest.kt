@@ -64,10 +64,37 @@ class PhoneNormalizationTest {
         assertTrue("Unknown slot should be screened by default", shouldScreenCall(-1))
 
         // Scenario 2: Both Open
-        assertFalse(
-            "Calls on SIM 1 should bypass when turned off",
-            when (0) { 0 -> false; 1 -> false; else -> true }
-        )
+        val bothOpenPolicy = fun(slot: Int): Boolean {
+            val sim1 = false
+            val sim2 = false
+            return when (slot) {
+                0 -> sim1
+                1 -> sim2
+                else -> {
+                    if (!sim1 && !sim2) false
+                    else true
+                }
+            }
+        }
+        assertFalse("When both SIMs open, unknown slot should not be screened", bothOpenPolicy(-1))
+        assertFalse("When both SIMs open, SIM 1 should not be screened", bothOpenPolicy(0))
+        assertFalse("When both SIMs open, SIM 2 should not be screened", bothOpenPolicy(1))
+    }
+
+    @Test
+    fun testSimSlotTextParsing() {
+        assertEquals(0, com.spamblock.util.SimHelper.parseSlotFromText("0"))
+        assertEquals(1, com.spamblock.util.SimHelper.parseSlotFromText("1"))
+        assertEquals(0, com.spamblock.util.SimHelper.parseSlotFromText("slot_0"))
+        assertEquals(1, com.spamblock.util.SimHelper.parseSlotFromText("slot_1"))
+        assertEquals(0, com.spamblock.util.SimHelper.parseSlotFromText("telephony_slot0"))
+        assertEquals(1, com.spamblock.util.SimHelper.parseSlotFromText("telephony_slot1"))
+        assertEquals(0, com.spamblock.util.SimHelper.parseSlotFromText("sim1"))
+        assertEquals(1, com.spamblock.util.SimHelper.parseSlotFromText("sim2"))
+        assertEquals(0, com.spamblock.util.SimHelper.parseSlotFromText("sub_0"))
+        assertEquals(1, com.spamblock.util.SimHelper.parseSlotFromText("sub_1"))
+        assertEquals(-1, com.spamblock.util.SimHelper.parseSlotFromText("unknown_account"))
+        assertEquals(-1, com.spamblock.util.SimHelper.parseSlotFromText(""))
     }
 
     @Test

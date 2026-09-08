@@ -37,13 +37,8 @@ class CallBlockerScreeningService : CallScreeningService() {
         Log.d(TAG, "Incoming call screened: rawNumber='$rawNumber', isPrivate=$isPrivate, simSlot=$simSlot")
 
         // Per-SIM Card Slot Protection Rule Check
-        if (simSlot == 0 && !prefs.sim1Protected) {
-            Log.i(TAG, "SIM 1 protection is turned OFF. Allowing call: $rawNumber")
-            allowCall(callDetails)
-            return
-        }
-        if (simSlot == 1 && !prefs.sim2Protected) {
-            Log.i(TAG, "SIM 2 protection is turned OFF. Allowing call: $rawNumber")
+        if (!prefs.isSimSlotProtected(simSlot)) {
+            Log.i(TAG, "SIM slot $simSlot protection is turned OFF. Allowing call: $rawNumber")
             allowCall(callDetails)
             return
         }

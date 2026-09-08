@@ -66,7 +66,10 @@ class PreferencesManager(context: Context) {
         return when (slot) {
             0 -> sim1Protected
             1 -> sim2Protected
-            else -> true
+            else -> {
+                if (!sim1Protected && !sim2Protected) false
+                else true
+            }
         }
     }
 
