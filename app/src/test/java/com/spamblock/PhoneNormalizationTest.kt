@@ -69,4 +69,28 @@ class PhoneNormalizationTest {
             when (0) { 0 -> false; 1 -> false; else -> true }
         )
     }
+
+    @Test
+    fun testUpdateCheckerVersionComparison() {
+        // Newer versions
+        assertTrue(com.spamblock.util.UpdateChecker.isNewerVersion("v2.1.0", "2.0.0"))
+        assertTrue(com.spamblock.util.UpdateChecker.isNewerVersion("v2.0.1", "2.0.0"))
+        assertTrue(com.spamblock.util.UpdateChecker.isNewerVersion("3.0.0", "2.0.0"))
+        assertTrue(com.spamblock.util.UpdateChecker.isNewerVersion("v2.1", "2.0.0"))
+        assertTrue(com.spamblock.util.UpdateChecker.isNewerVersion("2.0.1", "2.0"))
+
+        // Same or older versions
+        assertFalse(com.spamblock.util.UpdateChecker.isNewerVersion("v2.0.0", "2.0.0"))
+        assertFalse(com.spamblock.util.UpdateChecker.isNewerVersion("2.0.0", "2.0.0"))
+        assertFalse(com.spamblock.util.UpdateChecker.isNewerVersion("v1.9.9", "2.0.0"))
+        assertFalse(com.spamblock.util.UpdateChecker.isNewerVersion("v2.0", "2.0.0"))
+        assertFalse(com.spamblock.util.UpdateChecker.isNewerVersion("v2.0.0", "2.0"))
+        assertFalse(com.spamblock.util.UpdateChecker.isNewerVersion("v1.0.0", "2.0.0"))
+
+        // Edge / empty cases
+        assertFalse(com.spamblock.util.UpdateChecker.isNewerVersion("", "2.0.0"))
+        assertFalse(com.spamblock.util.UpdateChecker.isNewerVersion("v2.0.0", ""))
+        assertFalse(com.spamblock.util.UpdateChecker.isNewerVersion("invalid", "2.0.0"))
+    }
 }
+

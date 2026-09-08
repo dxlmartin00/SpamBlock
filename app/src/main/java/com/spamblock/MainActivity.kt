@@ -1,4 +1,4 @@
-﻿package com.spamblock
+package com.spamblock
 
 import android.Manifest
 import android.app.role.RoleManager
@@ -31,6 +31,8 @@ import com.spamblock.ui.screens.WhitelistScreen
 import com.spamblock.ui.theme.SpamBlockTheme
 import com.spamblock.util.SimCardInfo
 import com.spamblock.util.SimHelper
+import com.spamblock.util.UpdateChecker
+import com.spamblock.util.UpdateInfo
 
 class MainActivity : ComponentActivity() {
 
@@ -41,6 +43,7 @@ class MainActivity : ComponentActivity() {
     private var hasContactsPermissionState = mutableStateOf(false)
     private var hasPhoneStatePermissionState = mutableStateOf(false)
     private var activeSimsState = mutableStateOf<List<SimCardInfo>>(emptyList())
+    private var availableUpdateState = mutableStateOf<UpdateInfo?>(null)
 
     private val roleRequestLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -161,6 +164,13 @@ class MainActivity : ComponentActivity() {
         var selectedTab by remember { mutableIntStateOf(0) }
         val calls by db.callsFlow.collectAsState()
 
+        LaunchedEffect(Unit) {
+            val update = UpdateChecker.checkForUpdate(BuildConfig.VERSION_NAME)
+            if (update != null) {
+                availableUpdateState.value = update
+            }
+        }
+
         Scaffold(
             modifier = Modifier.fillMaxSize(),
             bottomBar = {
@@ -222,7 +232,9 @@ class MainActivity : ComponentActivity() {
                         onRequestRole = { requestCallScreeningRole() },
                         onRequestContactsPermission = { requestContactsPermission() },
                         onRequestPhoneStatePermission = { requestPhoneStatePermission() },
-                        prefs = prefs
+                        prefs = prefs,
+                        availableUpdate = availableUpdateState.value,
+                        onDismissUpdate = { availableUpdateState.value = null }
                     )
                     1 -> HistoryScreen(
                         db = db,
