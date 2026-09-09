@@ -8,9 +8,10 @@
 -keep public class * extends android.content.ContentProvider
 -keep public class * extends android.telecom.CallScreeningService
 
-# Keep data models used with Kotlin serialization / JSON
+# Keep data models and receivers
 -keep class com.spamblock.data.** { *; }
 -keep class com.spamblock.util.** { *; }
+-keep class com.spamblock.receiver.** { *; }
 
 # Compose rules
 -keepclassmembers class * {

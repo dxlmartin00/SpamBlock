@@ -116,7 +116,12 @@ class CallBlockerScreeningService : CallScreeningService() {
                 1 -> "[SIM 2] "
                 else -> ""
             }
-            NotificationHelper.notifyBlockedCall(this, "$simLabel$displayNumber", reason)
+            NotificationHelper.notifyBlockedCall(
+                context = this,
+                displayLabel = "$simLabel$displayNumber",
+                rawNumber = displayNumber,
+                reason = reason
+            )
         }
     }
 

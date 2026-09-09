@@ -34,6 +34,14 @@
             </intent-filter>
         </service>
 
+        <receiver
+            android:name=".receiver.NotificationActionReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.spamblock.action.WHITELIST_NUMBER" />
+            </intent-filter>
+        </receiver>
+
     </application>
 
 </manifest>

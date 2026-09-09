@@ -119,11 +119,11 @@ class PhoneNormalizationTest {
         assertFalse(com.spamblock.util.UpdateChecker.isNewerVersion("v2.0.0", ""))
         assertFalse(com.spamblock.util.UpdateChecker.isNewerVersion("invalid", "2.0.0"))
 
-        // Version 2.1.0 comparisons
-        assertTrue(com.spamblock.util.UpdateChecker.isNewerVersion("v2.2.0", "2.1.0"))
-        assertTrue(com.spamblock.util.UpdateChecker.isNewerVersion("v2.1.1", "2.1.0"))
-        assertFalse(com.spamblock.util.UpdateChecker.isNewerVersion("v2.1.0", "2.1.0"))
-        assertFalse(com.spamblock.util.UpdateChecker.isNewerVersion("v2.0.1", "2.1.0"))
+        // Version 2.2.0 comparisons
+        assertTrue(com.spamblock.util.UpdateChecker.isNewerVersion("v2.3.0", "2.2.0"))
+        assertTrue(com.spamblock.util.UpdateChecker.isNewerVersion("v2.2.1", "2.2.0"))
+        assertFalse(com.spamblock.util.UpdateChecker.isNewerVersion("v2.2.0", "2.2.0"))
+        assertFalse(com.spamblock.util.UpdateChecker.isNewerVersion("v2.1.0", "2.2.0"))
     }
 
     @Test
@@ -146,6 +146,21 @@ class PhoneNormalizationTest {
         assertFalse(shouldAllowRepeated(recentCount = 1, threshold = 3, allowRepeated = true))
         assertTrue(shouldAllowRepeated(recentCount = 2, threshold = 3, allowRepeated = true))
         assertTrue(shouldAllowRepeated(recentCount = 3, threshold = 3, allowRepeated = true))
+    }
+
+    @Test
+    fun testDialableNumberDetection() {
+        assertTrue(com.spamblock.util.NotificationHelper.isDialableNumber("+15551234567"))
+        assertTrue(com.spamblock.util.NotificationHelper.isDialableNumber("09123456789"))
+        assertTrue(com.spamblock.util.NotificationHelper.isDialableNumber("911"))
+        assertTrue(com.spamblock.util.NotificationHelper.isDialableNumber("(555) 123-4567"))
+
+        assertFalse(com.spamblock.util.NotificationHelper.isDialableNumber(""))
+        assertFalse(com.spamblock.util.NotificationHelper.isDialableNumber("private"))
+        assertFalse(com.spamblock.util.NotificationHelper.isDialableNumber("UNKNOWN"))
+        assertFalse(com.spamblock.util.NotificationHelper.isDialableNumber("restricted"))
+        assertFalse(com.spamblock.util.NotificationHelper.isDialableNumber("anonymous"))
+        assertFalse(com.spamblock.util.NotificationHelper.isDialableNumber("12"))
     }
 }
 
